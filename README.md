@@ -5,17 +5,15 @@ By following this guide, you'll learn how to utilize Piano API documentation, wi
 
 ## Table of Contents
 
-- [Introduction](#Introduction)
+- [Introduction](#introduction)
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
-- [Project Structure and Overview](#project-structure)
+- [Project Structure and Overview](#project-structure-and-overview)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Class structure Calls](#class-structure-calls)
 - [Webhooks Integration](#webhooks-integration)
 - [Data Analysis](#data-analysis)
 - [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
 
 ## Introduction
 
@@ -61,7 +59,7 @@ The project is organized as follow
 1. Install the required Python packages listed in `requirements.txt` using `pip`.
 2. Configure your API keys and GCP Service Account credentials in the `config/` directory.
 
-## Simple Usage
+## Class structure Calls
 
 Creating firs connection (Heand shake): 
 *Note that there is a limit I've added for a test.
@@ -91,13 +89,6 @@ Add endpoint urls for the call **Please note that I'm using the Sandbox version 
 self.call_Urls = {
                      'all_platform_conversions': 'https://sandbox.piano.io/api/v3/publisher/conversion/list',
                      'all_users_accesses': 'https://sandbox.piano.io/api/v3/publisher/user/list/accesses',
-                     'all_users': 'https://sandbox.piano.io/api/v3/publisher/user/list',
-                     'all_terms': 'https://sandbox.piano.io/api/v3/publisher/term/list',
-                     "list_resource": 'https://sandbox.piano.io/api/v3/publisher/resource/list',
-                     'list_subscriptions': 'https://sandbox.piano.io/api/v3/publisher/subscription/list',
-                     'list_promotions': 'https://sandbox.piano.io/api/v3/publisher/promotion/list',
-                     'list_offers': 'https://sandbox.piano.io/api/v3/publisher/offer/list',
-                     'list_all_webhooks': 'https://sandbox.piano.io/api/v3/publisher/webhook/list'
                       #.... Add any endpoint based on the provided design document
 
                      }
@@ -132,7 +123,7 @@ def pianoGetUsers(self):
         userDF = pd.DataFrame(users_details).T.reset_index()
         userDF.columns = ['uid', 'firstName', 'lastName', 'create_date', 'email']
 
-        userDF['create_date'] = pd.to_datetime(userDF['create_date'], unit='s') #I've de
+        userDF['create_date'] = pd.to_datetime(userDF['create_date'], unit='s') 
 
         return userDF
 ```
@@ -237,7 +228,100 @@ Based on the provided design document I've got all the webhooks that has been se
         return webhooksDF
 ```
 
-##
+## Preparing to upload
+
+This part contains the script that prepares the data to upload to the Cloud. 
+Based on the Design document and with coherentness with my building model and strategy regarding data modeling and database structures, I'm uploading to GCP storage.
+
+A tip: 
+Best for debugging, its consedered best practice to use a blue print of my previous codes in order to make the debugging proccess familiar, commun and easy to get.
+Not only for me, but also for the other developers in my team. More about that in later section.
+
+```
+import json
+from google.cloud import bigquery
+from google.cloud import storage
+```
+
+By using this blue-print, I've managed to do the following:
+- maintain the script for versions easily as each part is repreated.
+- debug easely due to familiarity.
+- add new data using the Class OOP the rest is a blue-print copy.
+
+```
+def write_dataframe_to_bucket(bucket_name, file_name, dataframe):
+    csv_data = dataframe.to_csv(index=False)
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+    blob.upload_from_string(csv_data, content_type='text/csv')
+```
+
+Then:
+```
+def load_table(bigquery_client,uri,table_id):
+
+    job_config = bigquery.LoadJobConfig(
+        autodetect=True,
+        max_bad_records=2000,
+        skip_leading_rows=1,
+        source_format=bigquery.SourceFormat.CSV,
+    )
+    load_job = bigquery_client.load_table_from_uri(
+        uri, table_id, job_config=job_config
+    )
+    load_job.result()
+    destination_table = bigquery_client.get_table(table_id)
+    print(f"Report loaded {format(destination_table.num_rows)} rows to table: {table_id}.")
+```
+Assuming You are going to execute this cloud function during the night based on the previous day for the analysts to add to their dashboards:
+
+```
+def get_yesterdays():
+    from datetime import date, timedelta
+    yesterday = date.today() - timedelta(days=1)
+    return yesterday.strftime('%Y%m%d')
+
+def prepare_piano_files(file_name,data):
+    bucket = "PROJECT_NAME"
+    file = f'path/to_my_file/in_bucket/{file_name}.csv'
+
+    write_dataframe_to_bucket(bucket, file, data)
+    table_id = f'project_id.table_id.{file_name}' 
+
+    bigquery_client = bigquery.Client()
+    uri = f'gs://path/to_my_file/in_bucket/{file_name}.csv'
+
+    load_table(bigquery_client, uri, table_id)
+
+def update_Piano_files(piano_file_name,data):
+    file_name=piano_file_name
+    prepare_piano_files(file_name,data)
+```
+
+And Finaly, in the --- directory:
+```
+from piano_api_mod import GetPianoData,api_key,aid
+from PianoGCP_func import prepare_piano_files,update_Piano_files,get_yesterdays
+from piano_articles_source import get_articles_subs_report
+import os
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "your_GCP_dervice_account.json"
+
+def update_Piano_BQ():
+    myData = GetPianoData(api_key, aid)
+
+
+    #Updating Promotions:
+    promotionData = myData.pianoGetPromotions()
+    piano_file_name='sb_Promotions_'+get_yesterdays()
+    update_Piano_files(piano_file_name,promotionData)
+
+...
+...
+...
+
+```
 
 
 ## Data Analysis
@@ -248,12 +332,3 @@ Explore the Jupyter notebooks in the `notebooks/` directory to gain insights fro
 
 We welcome contributions from the community! If you have any improvements or suggestions, feel free to open issues or submit pull requests.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
-## Contact
-
-For any questions or feedback, please contact [your email address].
-
-Happy data integrating!
