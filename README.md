@@ -127,7 +127,7 @@ def pianoGetUsers(self):
 
         return userDF
 ```
-## Piano.io -json 'if' exsis
+## Piano.io -json 'if' exsists
 
 In Piano.Io API Json results are tricky. rach endpoint call reflects all key objects and attributes, including elements that are present in any other api endpoint call. 
 Therefore, each different call with defferent data will consiss repeated objects in the json. 
@@ -135,6 +135,7 @@ Therefore, each different call with defferent data will consiss repeated objects
 I had to go throught the jsons and 'fish' the data relevant based on the outlook of my data warehouse building strategy.
 When it comes to data in the json that reflects sometimes repeated objects, but sometimes - simply missing important objects or elements, my solution was to write the following:
 
+using the following example, calling the Piano.io Term object API endpoint:
 ```
     def pianoGetTerms(self):
 
@@ -142,54 +143,35 @@ When it comes to data in the json that reflects sometimes repeated objects, but 
                                    params=self.body, headers=self.headers)
 
         all_terms = terms_data.json()
+```
+Then starting to "fish" for the appropreate data based on the DD given and the Data general model structure:
+
+```
 
         my_data = {item['term_id']: [
             item['resource']['rid'],
-            item['resource']['name'],
-            item['resource']['resource_url'],
-            item['name'],
-            item['description'],
-            item['type'],
-            item['type_name'],
-            item['create_date'],
-            item['update_date'],
-            item['collect_address'],
+            ......
+            ......
+            ......
             item['external_api_id'] if 'external_api_id' in item else "-",
             item['external_api_name'] if 'external_api_name' in item else "-",
-            item['payment_currency'] if 'payment_currency' in item else "-",
-            item['payment_billing_plan'] if 'payment_billing_plan' in item else "-",
-            item['payment_billing_plan_description'] if 'payment_billing_plan_description' in item else "-",
-            item['payment_currency'] if 'payment_currency' in item else "-",
+            ......
+            ......
             item['external_api_form_fields'][0]['field_name'] if 'external_api_form_fields' in item and item[
                 'external_api_form_fields'] else "-",
             item['external_api_form_fields'][0]['field_title'] if 'external_api_form_fields' in item and item[
                 'external_api_form_fields'] else "-",
-            item['external_api_form_fields'][0]['description'] if 'external_api_form_fields' in item and item[
-                'external_api_form_fields'] else "-",
-            item['external_api_form_fields'][0]['mandatory'] if 'external_api_form_fields' in item and item[
-                'external_api_form_fields'] else "-",
-            item['external_api_form_fields'][0]['hidden'] if 'external_api_form_fields' in item and item[
-                'external_api_form_fields'] else "-",
-            item['external_api_form_fields'][0]['default_value'] if 'external_api_form_fields' in item and item[
-                'external_api_form_fields'] else "-",
-            item['external_api_form_fields'][0]['order'] if 'external_api_form_fields' in item and item[
-                'external_api_form_fields'] else "-",
-            item['external_api_form_fields'][0]['type'] if 'external_api_form_fields' in item and item[
-                'external_api_form_fields'] else "-",
-            item['external_api_form_fields'][0]['editable'] if 'external_api_form_fields' in item and item[
-                'external_api_form_fields'] else "-"
+            ......
+            ......
+            ......
         ] for item in all_terms['terms']
         }
         terms_dataDF = pd.DataFrame(my_data).T.reset_index()
         terms_dataDF.columns = ['term_id', 'resourceId', 'resource_name', 'resource_url',
-                                'term_name', 'description', 'type', 'type_name', 'create_date', 'update_date',
-                                'collect_address', 'external_api_id', 'external_api_name', 'payment_currency',
-                                'payment_billing_plan', 'payment_billing_plan_description', 'payment_currency',
-                                'external_api_form_fields_name', 'external_api_form_fields_title',
-                                'external_api_form_fields_description',
-                                'external_api_form_fields_mandatory', 'external_api_form_fields_hidden',
-                                'external_api_form_fields_default_value', 'external_api_form_fields_order',
-                                'external_api_form_fields_type', 'external_api_form_fields_editable'
+                                            ......
+                                            ......
+                                            ......
+
                                 ]
 
         terms_dataDF['create_date'] = pd.to_datetime(terms_dataDF['create_date'], unit='s')
@@ -322,11 +304,6 @@ def update_Piano_BQ():
 ...
 
 ```
-
-
-## Data Analysis
-
-Explore the Jupyter notebooks in the `notebooks/` directory to gain insights from your integrated data. Visualize trends, subscriber growth, and other valuable metrics.
 
 ## Contributing
 
