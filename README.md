@@ -9,11 +9,15 @@ By following this guide, you'll learn how to utilize Piano API documentation, wi
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
 - [Project Structure and Overview](#project-structure-and-overview)
-  -[Define class](#define-class)
+  - [Define class](#define-class)
+  - [Define url endpoints](#define-url-endpoints)
+  - [Larger outlook in data structures](#larger-outlook-in-data-structures)
+  - [json 'if' exists](#json-'if'-exists)
 - [Installation](#installation)
 - [Class structure Calls](#class-structure-calls)
 - [Webhooks Integration](#webhooks-integration)
 - [Contributing](#contributing)
+
 
 ## Introduction
 
@@ -36,18 +40,18 @@ To get started with this project:
 
 1. Set up your IDE (I'll be using Pycharm IDE), using Python 3.11
 2. Set up your GCP Service Account credentials and ensure the necessary permissions
-  ***Please note: Best Practices in IAM when it comes to GCP are to avoid giving your service account "Owner" role.
+  ***Please note: Best Practices in IAM when it comes to GCP are to avoid giving your service account the "Owner" role.
 4. Review the Piano.io API documentation to understand available endpoints and data structures.
    *https://docs.piano.io/
 
 ## Project Structure and Overview
 Breaking the script into main directories:
-1. `api_classes/`: contain the script that calls all the data needed based on a given design document (contains several examples)
-2. `prep_for_cloud_upload/`: contains the script that preparing the data for GCP storage upload. Best practices and tips included.
+1. `api_classes/`: contains the script that calls all the data needed based on a given design document (contains several examples)
+2. `prep_for_cloud_upload/`: contains the script that prepares the data for GCP storage upload. Best practices and tips included.
 3. `source_subs/`: contains the script that uses Piano.io API for extracting ready reports via report ID
 4. `uploading_content`: contains the script that is responsible to upload the data retrieved from Piano.io to GCP
 
-The project is organized as follow
+The project is organized as follows
 
 - `src/`: Contains Python scripts for data extraction, transformation, and loading.
 - `notebooks/`: Jupyter notebooks showcasing data analysis and visualization.
@@ -61,7 +65,7 @@ The project is organized as follow
 
 ## Class structure Calls
 
-Creating firs connection (Heand shake): 
+Creating first connection (Heand shake): 
 *Note that there is a limit I've added for a test.
 
 ##### Define class
@@ -84,7 +88,7 @@ class GetPianoData:
                 "limit": 500
                 }
 ```
-
+##### Define url endpoints
 Add endpoint urls for the call **Please note that I'm using the Sandbox version (not production)**
 ```python
 self.call_Urls = {
@@ -96,7 +100,7 @@ self.call_Urls = {
 ```
 
 The following are several examples of api calls based on the provided design document:
-Include them into the primary class. 
+Include them in the primary class. 
 Any bloc API data call using the above endpoint urls are starting with:
 ```python
 all_users = requests.post(self.call_Urls["all_users"],
@@ -105,13 +109,14 @@ all_users = requests.post(self.call_Urls["all_users"],
 users = all_users.json()
 
 ```
+##### Larger outlook in data structures
 After calling the API endpoint, you'll get a json with the data.
-As I've mentioned, my goal would be to create a data warehouse in Google BigQuery using snowflake schema.
-In order to achieve that Its important to keep in mind the general joins as well as micro-joins, dim and fact tables.
+As I've mentioned, my goal would be to create a data warehouse in Google BigQuery using Snowflake schema.
+In order to achieve that It's important to keep in mind the general joins as well as micro-joins, dim and fact tables.
 
-Another important notion is that you'll have to consider both the design document provided by the department asking for the data in its de normilized form or even a graph but aloso, as a data developer, I had to consider the other data warehouse in my data lake that I will have to use in order to get the appropreate result. i.e, to determin ont only joins within (Intra) the Piano.io json results (in tabular form) but inter-DWH sometimes cross-projects DWH. 
+Another important notion is that you'll have to consider both the design document provided by the department asking for the data in its de-normalized form or even a graph but also, as a data developer, I had to consider the other data warehouse in my data lake that I will have to use in order to get the appropriate result. i.e, to determine not only joins within (Intra) the Piano.io json results (in tabular form) but inter-DWH and sometimes cross-projects DWH. 
 
-In the bellow example, I'm adding a method to my `GetPianoData` Class based on the above points.
+In the below example, I'm adding a method to my `GetPianoData` Class based on the above points.
 ```python
 def pianoGetUsers(self):
         all_users = requests.post(self.call_Urls["all_users"],
@@ -128,12 +133,12 @@ def pianoGetUsers(self):
 
         return userDF
 ```
-## Piano.io -json 'if' exsists
+##### json 'if' exists
 
-In Piano.Io API Json results are tricky. rach endpoint call reflects all key objects and attributes, including elements that are present in any other api endpoint call. 
-Therefore, each different call with defferent data will consiss repeated objects in the json. 
+In several CRM systems and in particular, with Piano.Io API Json results, each endpoint call reflects all key objects and attributes, including elements that are present in any other api endpoint call. 
+Therefore, each different call with different data will consist of repeated objects in the json. 
 
-I had to go throught the jsons and 'fish' the data relevant based on the outlook of my data warehouse building strategy.
+I had to go through the jsons and 'fish' the data relevant based on the outlook of my data warehouse building strategy.
 When it comes to data in the json that reflects sometimes repeated objects, but sometimes - simply missing important objects or elements, my solution was to write the following:
 
 using the following example, calling the Piano.io Term object API endpoint:
@@ -145,7 +150,7 @@ using the following example, calling the Piano.io Term object API endpoint:
 
         all_terms = terms_data.json()
 ```
-Then starting to "fish" for the appropreate data based on the DD given and the Data general model structure:
+Then starting to "fish" for the appropriate data based on the DD given and the Data general model structure:
 
 ```python
 
@@ -184,7 +189,7 @@ Then starting to "fish" for the appropreate data based on the DD given and the D
 ## Webhooks Integration
 
 This project also supports the integration of Piano.io Webhooks data. Follow the steps in the `webhooks/` directory to set up Webhooks to automatically capture new subscriber data.
-Based on the provided design document I've got all the webhooks that has been set in the main project however, if the DD states that they need only certain subscriber's actions captures, then it is up to you which to filter out.
+Based on the provided design document I've got all the webhooks that have been set in the main project however, if the DD states that they need only certain subscriber's actions captured, then it is up to you which to filter out.
 
 ```python
  def webhooks_all(self):
@@ -214,11 +219,11 @@ Based on the provided design document I've got all the webhooks that has been se
 ## Preparing to upload
 
 This part contains the script that prepares the data to upload to the Cloud. 
-Based on the Design document and with coherentness with my building model and strategy regarding data modeling and database structures, I'm uploading to GCP storage.
+Based on the Design document and with coherences with my building model and strategy regarding data modeling and database structures, I'm uploading to GCP storage.
 
 A tip: 
-Best for debugging, its consedered best practice to use a blue print of my previous codes in order to make the debugging proccess familiar, commun and easy to get.
-Not only for me, but also for the other developers in my team. More about that in later section.
+Best for debugging, it's considered best practice to use a blueprint of my previous codes in order to make the debugging process familiar, common, and easy to get.
+Not only for me but also for the other developers on my team. More about that in a later section.
 
 ```python
 import json
@@ -227,8 +232,8 @@ from google.cloud import storage
 ```
 
 By using this blue-print, I've managed to do the following:
-- maintain the script for versions easily as each part is repreated.
-- debug easely due to familiarity.
+- maintain the script for versions easily as each part is repeated.
+- debug easily due to familiarity.
 - add new data using the Class OOP the rest is a blue-print copy.
 
 ```python
@@ -282,7 +287,7 @@ def update_Piano_files(piano_file_name,data):
     prepare_piano_files(file_name,data)
 ```
 
-And Finaly, in the --- directory:
+And finally, in the --- directory:
 ```python
 from piano_api_mod import GetPianoData,api_key,aid
 from PianoGCP_func import prepare_piano_files,update_Piano_files,get_yesterdays
