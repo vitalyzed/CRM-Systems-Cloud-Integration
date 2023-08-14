@@ -62,6 +62,7 @@ The project is organized as follow
 2. Configure your API keys and GCP Service Account credentials in the `config/` directory.
 
 ## Simple Usage
+
 Creating firs connection (Heand shake): 
 *Note that there is a limit I've added for a test.
 
@@ -130,17 +131,21 @@ def pianoGetUsers(self):
 
         userDF = pd.DataFrame(users_details).T.reset_index()
         userDF.columns = ['uid', 'firstName', 'lastName', 'create_date', 'email']
-        userDF['create_date'] = pd.to_datetime(userDF['create_date'], unit='s')
+
+        userDF['create_date'] = pd.to_datetime(userDF['create_date'], unit='s') #I've de
 
         return userDF
 ```
-## If json 'if' exsis
+## Piano.io -json 'if' exsis
 
 In Piano.Io API Json results are tricky. rach endpoint call reflects all key objects and attributes, including elements that are present in any other api endpoint call. 
 Therefore, each different call with defferent data will consiss repeated objects in the json. 
 
+I had to go throught the jsons and 'fish' the data relevant based on the outlook of my data warehouse building strategy.
+When it comes to data in the json that reflects sometimes repeated objects, but sometimes - simply missing important objects or elements, my solution was to write the following:
+
 ```
-def pianoGetTerms(self):
+    def pianoGetTerms(self):
 
         terms_data = requests.post(self.call_Urls["all_terms"],
                                    params=self.body, headers=self.headers)
@@ -160,12 +165,10 @@ def pianoGetTerms(self):
             item['collect_address'],
             item['external_api_id'] if 'external_api_id' in item else "-",
             item['external_api_name'] if 'external_api_name' in item else "-",
-
             item['payment_currency'] if 'payment_currency' in item else "-",
             item['payment_billing_plan'] if 'payment_billing_plan' in item else "-",
             item['payment_billing_plan_description'] if 'payment_billing_plan_description' in item else "-",
             item['payment_currency'] if 'payment_currency' in item else "-",
-
             item['external_api_form_fields'][0]['field_name'] if 'external_api_form_fields' in item and item[
                 'external_api_form_fields'] else "-",
             item['external_api_form_fields'][0]['field_title'] if 'external_api_form_fields' in item and item[
@@ -207,6 +210,35 @@ def pianoGetTerms(self):
 ## Webhooks Integration
 
 This project also supports the integration of Piano.io Webhooks data. Follow the steps in the `webhooks/` directory to set up Webhooks to automatically capture new subscriber data.
+Based on the provided design document I've got all the webhooks that has been set in the main project however, if the DD states that they need only certain subscriber's actions captures, then it is up to you which to filter out.
+
+```
+ def webhooks_all(self):
+        all_events = requests.post(self.call_Urls["list_all_webhooks"],
+                                   params=self.body, headers=self.headers)
+
+        webhooks_all = all_events.json()
+        webhooks_details = {item['webhook_id']: [item['status'],
+                                                 item['retried'],
+                                                 item['type'],
+                                                 item['create_date'],
+                                                 item['update_date'] if 'update_date' in item else "-",
+                                                 item['event_localized'],
+                                                 item['user']['uid']
+                                                 ] for item in webhooks_all['webhooks']
+                            }
+        webhooksDF = pd.DataFrame(webhooks_details).T.reset_index()
+        webhooksDF.columns = ['webhook_id', 'status', 'retried', 'type', 'create_date',
+                              'update_date', 'event_localized', 'user']
+
+        webhooksDF['create_date'] = pd.to_datetime(webhooksDF['create_date'], unit='s')
+        webhooksDF['create_date'] = webhooksDF['create_date'].dt.strftime('%Y-%m-%d')
+
+        return webhooksDF
+```
+
+##
+
 
 ## Data Analysis
 
