@@ -9,10 +9,10 @@ By following this guide, you'll learn how to utilize Piano API documentation, wi
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
 - [Project Structure and Overview](#project-structure-and-overview)
+  -[define class](#define-class)
 - [Installation](#installation)
 - [Class structure Calls](#class-structure-calls)
 - [Webhooks Integration](#webhooks-integration)
-- [Data Analysis](#data-analysis)
 - [Contributing](#contributing)
 
 ## Introduction
@@ -64,7 +64,8 @@ The project is organized as follow
 Creating firs connection (Heand shake): 
 *Note that there is a limit I've added for a test.
 
-```
+##### define class
+```python
 class GetPianoData:
     def __init__(self, api_key, aid):
 
@@ -85,7 +86,7 @@ class GetPianoData:
 ```
 
 Add endpoint urls for the call **Please note that I'm using the Sandbox version (not production)**
-```
+```python
 self.call_Urls = {
                      'all_platform_conversions': 'https://sandbox.piano.io/api/v3/publisher/conversion/list',
                      'all_users_accesses': 'https://sandbox.piano.io/api/v3/publisher/user/list/accesses',
@@ -97,7 +98,7 @@ self.call_Urls = {
 The following are several examples of api calls based on the provided design document:
 Include them into the primary class. 
 Any bloc API data call using the above endpoint urls are starting with:
-```
+```python
 all_users = requests.post(self.call_Urls["all_users"],
                                   params=self.body, headers=self.headers)
 
@@ -111,7 +112,7 @@ In order to achieve that Its important to keep in mind the general joins as well
 Another important notion is that you'll have to consider both the design document provided by the department asking for the data in its de normilized form or even a graph but aloso, as a data developer, I had to consider the other data warehouse in my data lake that I will have to use in order to get the appropreate result. i.e, to determin ont only joins within (Intra) the Piano.io json results (in tabular form) but inter-DWH sometimes cross-projects DWH. 
 
 In the bellow example, I'm adding a method to my `GetPianoData` Class based on the above points.
-```
+```python
 def pianoGetUsers(self):
         all_users = requests.post(self.call_Urls["all_users"],
                                   params=self.body, headers=self.headers)
@@ -136,7 +137,7 @@ I had to go throught the jsons and 'fish' the data relevant based on the outlook
 When it comes to data in the json that reflects sometimes repeated objects, but sometimes - simply missing important objects or elements, my solution was to write the following:
 
 using the following example, calling the Piano.io Term object API endpoint:
-```
+```python
     def pianoGetTerms(self):
 
         terms_data = requests.post(self.call_Urls["all_terms"],
@@ -146,7 +147,7 @@ using the following example, calling the Piano.io Term object API endpoint:
 ```
 Then starting to "fish" for the appropreate data based on the DD given and the Data general model structure:
 
-```
+```python
 
         my_data = {item['term_id']: [
             item['resource']['rid'],
@@ -185,7 +186,7 @@ Then starting to "fish" for the appropreate data based on the DD given and the D
 This project also supports the integration of Piano.io Webhooks data. Follow the steps in the `webhooks/` directory to set up Webhooks to automatically capture new subscriber data.
 Based on the provided design document I've got all the webhooks that has been set in the main project however, if the DD states that they need only certain subscriber's actions captures, then it is up to you which to filter out.
 
-```
+```python
  def webhooks_all(self):
         all_events = requests.post(self.call_Urls["list_all_webhooks"],
                                    params=self.body, headers=self.headers)
@@ -219,7 +220,7 @@ A tip:
 Best for debugging, its consedered best practice to use a blue print of my previous codes in order to make the debugging proccess familiar, commun and easy to get.
 Not only for me, but also for the other developers in my team. More about that in later section.
 
-```
+```python
 import json
 from google.cloud import bigquery
 from google.cloud import storage
@@ -230,7 +231,7 @@ By using this blue-print, I've managed to do the following:
 - debug easely due to familiarity.
 - add new data using the Class OOP the rest is a blue-print copy.
 
-```
+```python
 def write_dataframe_to_bucket(bucket_name, file_name, dataframe):
     csv_data = dataframe.to_csv(index=False)
     storage_client = storage.Client()
@@ -240,7 +241,7 @@ def write_dataframe_to_bucket(bucket_name, file_name, dataframe):
 ```
 
 Then:
-```
+```python
 def load_table(bigquery_client,uri,table_id):
 
     job_config = bigquery.LoadJobConfig(
@@ -258,7 +259,7 @@ def load_table(bigquery_client,uri,table_id):
 ```
 Assuming You are going to execute this cloud function during the night based on the previous day for the analysts to add to their dashboards:
 
-```
+```python
 def get_yesterdays():
     from datetime import date, timedelta
     yesterday = date.today() - timedelta(days=1)
@@ -282,7 +283,7 @@ def update_Piano_files(piano_file_name,data):
 ```
 
 And Finaly, in the --- directory:
-```
+```python
 from piano_api_mod import GetPianoData,api_key,aid
 from PianoGCP_func import prepare_piano_files,update_Piano_files,get_yesterdays
 from piano_articles_source import get_articles_subs_report
