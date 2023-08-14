@@ -1,4 +1,4 @@
-# PIANO-# Piano.io Data Integration with Google Cloud Platform
+# CRM Cloud Integration Project-# Piano.io Data Integration with Google Cloud Platform
 
 Welcome to the documentation for the Piano.io Data Integration project. This project focuses on seamlessly connecting Piano's highly customizable API data with the Google Cloud Platform (GCP). 
 By following this guide, you'll learn how to utilize Piano API documentation, with GCP Service Account credentials, using Python programming, and data warehousing techniques to efficiently manage and analyze your Piano.io data.
@@ -9,7 +9,7 @@ By following this guide, you'll learn how to utilize Piano API documentation, wi
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
 - [Project Structure and Overview](#project-structure-and-overview)
-  -[define class](#define-class)
+  -[Define class](#define-class)
 - [Installation](#installation)
 - [Class structure Calls](#class-structure-calls)
 - [Webhooks Integration](#webhooks-integration)
@@ -64,7 +64,7 @@ The project is organized as follow
 Creating firs connection (Heand shake): 
 *Note that there is a limit I've added for a test.
 
-##### define class
+##### Define class
 ```python
 class GetPianoData:
     def __init__(self, api_key, aid):
